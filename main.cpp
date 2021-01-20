@@ -10,41 +10,33 @@ using namespace std;
 int main() {
 	TransportCatalogue transport_catalogue;
 	auto filling_requests = InputFillingRequests();
-	sort( filling_requests.requests.begin()
-		, filling_requests.requests.end()
+	sort( filling_requests.begin()
+		, filling_requests.end()
 		, [](const auto& lhs, const auto& rhs) {
-			return lhs.query_type > rhs.query_type;
+			return lhs[0] > rhs[0];
 		}
 	);
-	const auto& requests = filling_requests.requests;
-	for (const auto& request : requests) {
-		if (request.query_type == RequestType::STOP) {
-			transport_catalogue.AddStop(request.name, stod(request.words[0]), stod(request.words[1]));
+
+	for (const auto& request : filling_requests) {
+		if (request[0] == 'S') {
+			transport_catalogue.AddStop(request);
 		} else {
-			if (request.separator_type == SeparatorType::DASH) {
-				vector<string> tmp(request.words);
-				tmp.reserve(request.words.size() * 2 - 1);
-				for (int i = request.words.size() - 2; i >= 0; i--) {
-					tmp.push_back(request.words[i]);
-				}
-				transport_catalogue.AddBus(request.name, tmp);
-			} else {
-				transport_catalogue.AddBus(request.name, request.words);
-			}
+			transport_catalogue.AddBus(request);
 		}
 	}
 
 	auto withdrawal_requests = InputWithdrawalRequests();
-	for (const auto& request : withdrawal_requests.requests) {
+	for (const auto& request : withdrawal_requests) {
 		auto information_bus = transport_catalogue.GetInformationBus(request);
 		OutputWithdrawalRequest(static_cast<int>(information_bus.bus_existing), information_bus.name, information_bus.stops_on_route, information_bus.unique_stops, information_bus.routh_length);
 	}
 }
 
 /*
-10
+11
 Stop Rasskazovka: 55.632761, 37.333324
 Stop Biryulyovo Zapadnoye: 55.574371, 37.651700
+Bus 256: Biryulyovo Zapadnoye > Biryusinka > Universam > Biryulyovo Tovarnaya > Biryulyovo Passazhirskaya > Biryulyovo Zapadnoye
 Stop Biryusinka: 55.581065, 37.648390
 Stop Universam: 55.587655, 37.645687
 Stop Biryulyovo Tovarnaya: 55.592028, 37.653656
