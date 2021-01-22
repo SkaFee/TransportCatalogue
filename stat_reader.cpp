@@ -24,9 +24,9 @@ vector<string> InputWithdrawalRequests() {
 	return result;
 }
 
-void OutputWithdrawalRequest(
+void OutputWithdrawalRequestBus(
 	bool existing, 
-	const std::string_view& name,
+	const std::string& name,
 	const int stops_on_route, 
 	const int unique_stops, 
 	const double routh_length
@@ -41,5 +41,25 @@ void OutputWithdrawalRequest(
 			<< endl;
 	} else {
 		cout << "Bus "s << name << ": not found"s << endl;
+	}
+}
+
+void OutputWithdrawalRequestStop(
+	bool existing, 
+	const std::string& name, 
+	const std::vector<std::string>& passing_buses
+) {
+	if (existing) {
+		if (passing_buses.size()) {
+			cout << "Stop "s << name << ": buses"s;
+			for (const auto& bus : passing_buses) {
+				cout << " "s << bus;
+			}
+			cout << endl;
+		} else {
+			cout << "Stop "s << name << ": no buses"s << endl;
+		}
+	} else {
+		cout << "Stop "s << name << ": not found"s << endl;
 	}
 }
