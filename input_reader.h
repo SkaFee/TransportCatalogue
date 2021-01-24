@@ -3,4 +3,6 @@
 #include <string>
 #include <vector>
 
-std::vector<std::string> InputFillingRequests();
+namespace filling_requests {
+	std::vector<std::string> Input();
+}
