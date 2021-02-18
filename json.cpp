@@ -1,28 +1,28 @@
 #include "json.h"
 
-using namespace std;
-
 namespace json {
 
     namespace {
+        using namespace std::literals;
 
-        char ReadNextChar(istream& input) {
+        char ReadNextChar(std::istream& input) {
             if (char c; input >> c) {
                 return c;
             }
             throw ParsingError("Failed to read from stream"s);
         }
-        char ReadOneChar(istream& input) {
+
+        char ReadOneChar(std::istream& input) {
             if (!input) {
                 throw ParsingError("Failed to read from stream"s);
             }
             return static_cast<char>(input.get());
         }
 
-        Node LoadNode(istream& input);
+        Node LoadNode(std::istream& input);
 
-        Node LoadNull(istream& input) {
-            string s;
+        Node LoadNull(std::istream& input) {
+            std::string s;
             for (int i = 0; i < 4; ++i) {
                 s += ReadOneChar(input);
             }
@@ -33,21 +33,21 @@ namespace json {
             return Node();
         }
 
-        Node LoadArray(istream& input) {
+        Node LoadArray(std::istream& input) {
             Array result;
 
             for (char c = ReadNextChar(input); c != ']'; c = ReadNextChar(input)) {
                 if (c != ',') {
                     input.putback(c);
                 }
-                result.push_back(LoadNode(input));
+                result.emplace_back(std::move(LoadNode(input)));
             }
 
-            return Node(move(result));
+            return Node(std::move(result));
         }
 
-        Node LoadNumber(istream& input) {
-            string parsed_num;
+        Node LoadNumber(std::istream& input) {
+            std::string parsed_num;
 
             auto read_char = [&parsed_num, &input] {
                 parsed_num += ReadOneChar(input);
@@ -57,10 +57,10 @@ namespace json {
             };
 
             auto read_digits = [&input, read_char] {
-                if (!isdigit(input.peek())) {
+                if (!std::isdigit(input.peek())) {
                     throw ParsingError("A digit is expected"s);
                 }
-                while (isdigit(input.peek())) {
+                while (std::isdigit(input.peek())) {
                     read_char();
                 }
             };
@@ -94,19 +94,19 @@ namespace json {
             try {
                 if (is_int) {
                     try {
-                        return Node(stoi(parsed_num));
+                        return Node(std::stoi(parsed_num));
                     } catch (...) {
 
                     }
                 }
-                return Node(stod(parsed_num));
+                return Node(std::stod(parsed_num));
             } catch (...) {
                 throw ParsingError("Failed to convert "s + parsed_num + " to number"s);
             }
         }
 
-        Node LoadString(istream& input) {
-            string line;
+        Node LoadString(std::istream& input) {
+            std::string line;
 
             while (input.peek() != '\"') {
                 line += ReadOneChar(input);
@@ -136,11 +136,11 @@ namespace json {
             }
             ReadOneChar(input);
 
-            return Node(move(line));
+            return Node(std::move(line));
         }
 
-        Node LoadBool(istream& input) {
-            string s;
+        Node LoadBool(std::istream& input) {
+            std::string s;
 
             int sz = (input.peek() == 'f') ? 5 : 4;
             for (int i = 0; i < sz; ++i) {
@@ -155,25 +155,25 @@ namespace json {
             throw ParsingError("Failed load bool"s);
         }
 
-        Node LoadDict(istream& input) {
+        Node LoadDict(std::istream& input) {
             Dict result;
 
             for (char c = ReadNextChar(input); c != '}'; c = ReadNextChar(input)) {
                 if (c == ',') {
                     c = ReadNextChar(input);
                 }
-                string key = LoadString(input).AsString();
+                std::string key = LoadString(input).AsString();
                 c = ReadNextChar(input);
                 if (c != ':') {
                     throw ParsingError("Failed to load dict"s);
                 }
-                result.insert({ move(key), move(LoadNode(input)) });
+                result.insert({ std::move(key), std::move(LoadNode(input)) });
             }
 
-            return Node(move(result));
+            return Node(std::move(result));
         }
 
-        Node LoadNode(istream& input) {
+        Node LoadNode(std::istream& input) {
             char c = ReadNextChar(input);
             switch (c) {
             case '[':
@@ -200,7 +200,7 @@ namespace json {
     }
 
     Node::Node() 
-        : value_(make_shared<NodeValue>(nullptr_t{}))
+        : value_(std::make_shared<NodeValue>(std::nullptr_t{}))
     {}
 
     bool Node::operator==(const Node& node) const noexcept {
@@ -213,54 +213,54 @@ namespace json {
 
     int Node::AsInt() const {
         if (IsInt()) {
-            return get<int>(*value_.get());
+            return std::get<int>(*value_.get());
         }
-        throw logic_error("Failed return int"s);
+        throw std::logic_error("Failed return int"s);
     }
 
     double Node::AsDouble() const {
         if (IsInt()) {
-            return static_cast<double>(get<int>(*value_.get()));
+            return static_cast<double>(std::get<int>(*value_.get()));
         } else if (IsPureDouble()) {
-            return get<double>(*value_.get());
+            return std::get<double>(*value_.get());
         }
-        throw logic_error("Failed return double, wrong type"s);
+        throw std::logic_error("Failed return double, wrong type"s);
     }
 
-    const string& Node::AsString() const {
+    const std::string& Node::AsString() const {
         if (IsString()) {
-            return get<string>(*value_.get());
+            return std::get<std::string>(*value_.get());
         }
-        throw logic_error("Failed return string, wrong type"s);
+        throw std::logic_error("Failed return string, wrong type"s);
     }
 
     bool Node::AsBool() const {
         if (IsBool()) {
-            return get<bool>(*value_.get());
+            return std::get<bool>(*value_.get());
         }
-        throw logic_error("Failed return bool, wrong type"s);
+        throw std::logic_error("Failed return bool, wrong type"s);
     }
 
     const Array& Node::AsArray() const {
         if (IsArray()) {
-            return get<Array>(*value_.get());
+            return std::get<Array>(*value_.get());
         }
-        throw logic_error("Failed return Array, wrong type"s);
+        throw std::logic_error("Failed return Array, wrong type"s);
     }
 
     const Dict& Node::AsMap() const {
         if (IsMap()) {
-            return get<Dict>(*value_.get());
+            return std::get<Dict>(*value_.get());
         }
-        throw logic_error("Failed return Array, wrong type"s);
+        throw std::logic_error("Failed return Array, wrong type"s);
     }
 
     bool Node::IsNull() const noexcept {
-        return holds_alternative<nullptr_t>(*value_.get());
+        return std::holds_alternative<std::nullptr_t>(*value_.get());
     }
 
     bool Node::IsInt() const noexcept {
-        return holds_alternative<int>(*value_.get());
+        return std::holds_alternative<int>(*value_.get());
     }
 
     bool Node::IsDouble() const noexcept {
@@ -268,30 +268,30 @@ namespace json {
     }
 
     bool Node::IsPureDouble() const noexcept {
-        return holds_alternative<double>(*value_.get());
+        return std::holds_alternative<double>(*value_.get());
     }
 
     bool Node::IsString() const noexcept {
-        return holds_alternative<string>(*value_.get());
+        return std::holds_alternative<std::string>(*value_.get());
     }
 
     bool Node::IsBool() const noexcept {
-        return holds_alternative<bool>(*value_.get());
+        return std::holds_alternative<bool>(*value_.get());
     }
 
     bool Node::IsArray() const noexcept {
-        return holds_alternative<Array>(*value_.get());
+        return std::holds_alternative<Array>(*value_.get());
     }
 
     bool Node::IsMap() const noexcept {
-        return holds_alternative<Dict>(*value_.get());
+        return std::holds_alternative<Dict>(*value_.get());
     }
 
-    void Node::Print(ostream& out) const noexcept {
+    void Node::Print(std::ostream& out) const noexcept {
         visit(Printer{ out }, *value_.get());
     }
 
-    void Node::Printer::operator()(nullptr_t) const noexcept {
+    void Node::Printer::operator()(std::nullptr_t) const noexcept {
         output << "null"sv;
     }
 
@@ -321,7 +321,7 @@ namespace json {
     }
 
     void Node::Printer::operator()(const bool b) const noexcept {
-        output << ((b) ? "true"sv : "false"sv);
+        output << (b) ? "true"sv : "false"sv;
     }
 
     void Node::Printer::operator()(const int num) const noexcept {
@@ -332,8 +332,8 @@ namespace json {
         output << num;
     }
 
-    void Node::Printer::operator()(const string_view str) const noexcept {
-        string result = "\""s;
+    void Node::Printer::operator()(const std::string_view str) const noexcept {
+        std::string result = "\""s;
         for (const char letter : str) {
             switch (letter) {
             case '\\':
@@ -355,11 +355,11 @@ namespace json {
                 result += letter;
             }
         }
-        output << move(result) + "\""s;
+        output << std::move(result) + "\""s;
     }
 
     Document::Document(Node root)
-        : root_(make_shared<Node>(move(root))) {
+        : root_(std::make_shared<Node>(std::move(root))) {
     }
 
     bool Document::operator==(const Document& doc) const noexcept {
@@ -374,11 +374,11 @@ namespace json {
         return *root_.get();
     }
 
-    Document Load(istream& input) {
-        return Document{ move(LoadNode(input)) };
+    Document Load(std::istream& input) {
+        return Document{ std::move(LoadNode(input)) };
     }
 
-    void Print(const Document& doc, ostream& output) {
+    void Print(const Document& doc, std::ostream& output) {
         doc.GetRoot().Print(output);
     }
 

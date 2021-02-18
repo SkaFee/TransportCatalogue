@@ -5,9 +5,9 @@
 #include <set>
 #include <cmath>
 
-using namespace std;
-
 namespace transport {
+
+	using namespace domain;
 
 	size_t TransportCatalogue::StopsPairHasher::operator()(const StopsPair& stops_pair) const {
 		return {
@@ -17,7 +17,7 @@ namespace transport {
 	}
 
 	void TransportCatalogue::AddBus(Bus&& bus) {
-		buses_.push_back(make_shared<Bus>(move(bus)));
+		buses_.push_back(std::make_shared<Bus>(std::move(bus)));
 		const auto bus_ptr = buses_.back().get();
 		name_to_bus_[*bus_ptr->name.get()] = buses_.back();
 
@@ -25,7 +25,10 @@ namespace transport {
 	}
 
 	void TransportCatalogue::AddStop(Stop&& stop) {
-		stops_.push_back(make_shared<Stop>(move(stop)));
+		if (name_to_stop_.count(*stop.name.get())) {
+			return;
+		}
+		stops_.push_back(std::make_shared<Stop>(std::move(stop)));
 		const auto stop_ptr = stops_.back().get();
 		name_to_stop_[*stop_ptr->name.get()] = stops_.back();
 
@@ -44,26 +47,26 @@ namespace transport {
 		}
 	}
 
-	BusPtr TransportCatalogue::SearchBus(const string_view name) const {
+	BusPtr TransportCatalogue::SearchBus(const std::string_view name) const {
 		return (name_to_bus_.count(name) ? name_to_bus_.at(name) : nullptr);
 	}
 
-	StopPtr TransportCatalogue::SearchStop(const string_view name) const {
+	StopPtr TransportCatalogue::SearchStop(const std::string_view name) const {
 		return (name_to_stop_.count(name) ? name_to_stop_.at(name) : nullptr);
 	}
 
-	optional<int> TransportCatalogue::GetActualDistanceBetweenStops(const std::string_view stop1_name, const std::string_view stop2_name) const {
-		StopPtr first_stop = SearchStop(stop1_name);
+	std::optional<int> TransportCatalogue::GetActualDistanceBetweenStops(const std::string_view stop1_name, const std::string_view stop2_name) const {
+		StopPtr first_stop	= SearchStop(stop1_name);
 		StopPtr second_stop = SearchStop(stop2_name);
 		if (first_stop.get() == nullptr || second_stop.get() == nullptr) {
 			return {};
 		}
 		const StopsPair tmp_pair = { first_stop, second_stop };
 
-		return (stops_pair_to_distance_.count(tmp_pair) ? stops_pair_to_distance_.at(tmp_pair) : optional<int>{});
+		return (stops_pair_to_distance_.count(tmp_pair) ? stops_pair_to_distance_.at(tmp_pair) : std::optional<int>{});
 	}
 
-	optional<double> TransportCatalogue::GetGeographicDistanceBetweenStops(const std::string_view stop1_name, const std::string_view stop2_name) const {
+	std::optional<double> TransportCatalogue::GetGeographicDistanceBetweenStops(const std::string_view stop1_name, const std::string_view stop2_name) const {
 		StopPtr first_stop = SearchStop(stop1_name);
 		StopPtr second_stop = SearchStop(stop2_name);
 		if (first_stop == nullptr || second_stop == nullptr) {
@@ -85,7 +88,7 @@ namespace transport {
 		return std::vector<StopPtr>(stops_.begin(), stops_.end());
 	}
 
-	void TransportCatalogue::AddToStopPassingBuses(const vector<StopPtr>& stops, const string_view bus_name) {
+	void TransportCatalogue::AddToStopPassingBuses(const std::vector<StopPtr>& stops, const std::string_view bus_name) {
 		BusPtr bus = SearchBus(bus_name);
 		for (size_t i = 0; i < stops.size(); ++i) {
 			stop_to_passing_buses_[stops[i]].insert(bus);

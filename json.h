@@ -7,6 +7,7 @@
 #include <variant>
 #include <memory>
 #include <functional>
+#include <utility>
 
 namespace json {
 
@@ -16,7 +17,7 @@ namespace json {
 
     class ParsingError : public std::runtime_error {
     public:
-        using runtime_error::runtime_error;
+        using std::runtime_error::runtime_error;
     };
 
     using NodeValue = std::variant<std::nullptr_t, Array, Dict, bool, int, double, std::string>;
@@ -82,5 +83,4 @@ namespace json {
     Document Load(std::istream& input);
 
     void Print(const Document& doc, std::ostream& output);
-
 }

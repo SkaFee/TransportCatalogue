@@ -10,6 +10,7 @@
 #include <optional>
 #include <cmath>
 #include <utility>
+#include <cstdlib>
 
 namespace renderer {
 
@@ -99,10 +100,11 @@ namespace renderer {
 
 	class MapRenderer {
 	public:
+        MapRenderer() = default;
         MapRenderer(RenderingSettings&& settings);
 
         void SetSettings(RenderingSettings&& settings);
-        svg::Document MakeDocument(std::vector<BusPtr>&& buses, std::vector<std::pair<StopPtr, StopStat>>&& stops) const;
+        svg::Document MakeDocument(std::vector<domain::BusPtr>&& buses, std::vector<std::pair<domain::StopPtr, domain::StopStat>>&& stops) const;
 
 	private:
         RenderingSettings settings_;
@@ -119,9 +121,9 @@ namespace renderer {
             return result;
         }
 
-        void AddBusesLines(svg::Document& doc, SphereProjector& proj, const std::vector<BusPtr>& buses) const;
-        void AddBusesNames(svg::Document& doc, SphereProjector& proj, const std::vector<BusPtr>& buses) const;
-        void AddStopsCircles(svg::Document& doc, SphereProjector& proj, const std::vector<std::pair<StopPtr, StopStat>>& stops) const;
-        void AddStopsNames(svg::Document& doc, SphereProjector& proj, const std::vector<std::pair<StopPtr, StopStat>>& stops) const;
+        void AddBusesLines(svg::Document& doc, SphereProjector& proj, const std::vector<domain::BusPtr>& buses)                                 const;
+        void AddBusesNames(svg::Document& doc, SphereProjector& proj, const std::vector<domain::BusPtr>& buses)                                 const;
+        void AddStopsCircles(svg::Document& doc, SphereProjector& proj, const std::vector<std::pair<domain::StopPtr, domain::StopStat>>& stops) const;
+        void AddStopsNames(svg::Document& doc, SphereProjector& proj, const std::vector<std::pair<domain::StopPtr, domain::StopStat>>& stops)   const;
 	};
 }

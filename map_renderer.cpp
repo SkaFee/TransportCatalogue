@@ -4,6 +4,7 @@
 
 namespace renderer {
     using namespace std::literals;
+    using namespace domain;
 
 	svg::Point SphereProjector::operator()(geo::Coordinates coords) const {
         return {
@@ -110,7 +111,7 @@ namespace renderer {
             doc.Add(std::move(text_substrate));
             doc.Add(std::move(text));
 
-            if (bus.last_stop_name != nullptr) {
+            if (bus.last_stop_name != nullptr && bus.last_stop_name.get() != bus.route.front().get()) {
                 svg::Point p = proj({ bus.last_stop_name.get()->latitude, bus.last_stop_name.get()->longitude });
 
                 text_substrate_last_stop

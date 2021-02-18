@@ -5,49 +5,78 @@
 #include <utility>
 #include <functional>
 
-using namespace std;
-
 namespace request_handler {
 
-	RequestHandler::RequestHandler(transport::TransportCatalogue& db)
+	using namespace domain;
+
+	RequestHandler::RequestHandler(transport::TransportCatalogue& db, renderer::MapRenderer& mr)
 		: db_(db)
+		, mr_(mr)
 	{}
 
-	void RequestHandler::AddBus(const string_view raw_query) {
+	void RequestHandler::AddBus(const std::string_view raw_query) {
 		auto [words, separator] = SplitIntoWordsBySeparator(raw_query);
 		auto [route, unique_stops] = WordsToRoute(words, separator);
 		const auto [geographic, actual] = ComputeRouteLengths(route);
-		Bus new_bus(move(words[0]), StopsToStopPtr(move(route)), unique_stops, actual, geographic);
+		Bus new_bus(std::move(words[0]), std::move(StopsToStopPtr(std::move(route))), unique_stops, actual, geographic);
 
-		db_.AddBus(move(new_bus));
+		db_.AddBus(std::move(new_bus));
 	}
 
-	void RequestHandler::AddStop(const string_view raw_query) {
+	void RequestHandler::AddBus(Bus&& bus) {
+		db_.AddBus(std::move(bus));
+	}
+
+	void RequestHandler::AddStop(const std::string_view raw_query) {
 		auto [words, _] = SplitIntoWordsBySeparator(raw_query);
-		Stop new_stop(move(words[0]), stod(words[1]), stod(words[2]));
+		Stop new_stop(std::move(words[0]), std::stod(words[1]), std::stod(words[2]));
 
-		db_.AddStop(move(new_stop));
+		db_.AddStop(std::move(new_stop));
 	}
 
-	void RequestHandler::SetDistanceBetweenStops(const string_view raw_query) {
+	void RequestHandler::AddStop(Stop&& stop) {
+		db_.AddStop(std::move(stop));
+	}
+
+	void RequestHandler::SetDistanceBetweenStops(const std::string_view raw_query) {
 		auto [parts, _] = SplitIntoWordsBySeparator(raw_query);
 		const auto& stop_X = parts[0];
 		for (size_t i = 3; i < parts.size(); ++i) {
 			auto [raw_distance, stop_To] = SplitIntoLengthStop(move(parts[i]));
-			int distance = stoi(move(raw_distance.substr(0, raw_distance.size() - 1)));
+			int distance = std::stoi(move(raw_distance.substr(0, raw_distance.size() - 1)));
 
 			db_.SetDistanceBetweenStops(stop_X, stop_To, distance);
 		}
 	}
 
-	optional<BusStat> RequestHandler::GetBusStat(const string_view bus_name) const {
+	void RequestHandler::SetDistanceBetweenStops(const std::string_view first, const std::string_view second, int distance) {
+		db_.SetDistanceBetweenStops(first, second, distance);
+	}
+
+	BusPtr RequestHandler::SearchBus(const std::string_view name) const {
+		return db_.SearchBus(name);
+	}
+
+	StopPtr RequestHandler::SearchStop(const std::string_view name) const {
+		return db_.SearchStop(name);
+	}
+
+	const std::vector<BusPtr> RequestHandler::GetBusesInVector() const {
+		return db_.GetBusesInVector();
+	}
+
+	const std::vector<StopPtr> RequestHandler::GetStopsInVector() const {
+		return db_.GetStopsInVector();
+	}
+
+	std::optional<BusStat> RequestHandler::GetBusStat(const std::string_view bus_name) const {
 		BusPtr bus = db_.SearchBus(bus_name);
 		if (bus == nullptr) {
 			return {};
 		}
 
-		return optional<BusStat>({
-			bus_name,
+		return std::optional<BusStat>({
+			std::move(bus_name),
 			static_cast<int>(bus.get()->route.size()),
 			bus->unique_stops,
 			bus->route_actual_length,
@@ -55,24 +84,24 @@ namespace request_handler {
 		});
 	}
 
-	optional<StopStat> RequestHandler::GetStopStat(const string_view stop_name) const {
+	std::optional<StopStat> RequestHandler::GetStopStat(const std::string_view stop_name) const {
 		StopPtr stop = db_.SearchStop(stop_name);
 		if (stop == nullptr) {
 			return {};
 		}
 
-		return optional<StopStat>({
+		return std::optional<StopStat>({
 			stop_name,
 			GetBusesByStop(stop_name)
 		});
 	}
 
-	const unordered_set<BusPtr>* RequestHandler::GetBusesByStop(const std::string_view stop_name) const {
+	const std::unordered_set<BusPtr>* RequestHandler::GetBusesByStop(const std::string_view stop_name) const {
 		StopPtr stop = db_.SearchStop(stop_name);
 		return db_.GetPassingBusesByStop(stop);
 	}
 
-	tuple<double, int> RequestHandler::ComputeRouteLengths(const vector<string_view>& route) const {
+	std::tuple<double, int> RequestHandler::ComputeRouteLengths(const std::vector<std::string_view>& route) const {
 		double geographic = 0;
 		int actual = 0;
 
@@ -89,11 +118,11 @@ namespace request_handler {
 			prev_stop = cur_stop;
 		}
 
-		return tuple<double, int>(geographic, actual);
+		return std::tuple<double, int>(geographic, actual);
 	}
 
 	std::vector<StopPtr> RequestHandler::StopsToStopPtr(const std::vector<std::string_view>& stops) const {
-		vector<StopPtr> result;
+		std::vector<StopPtr> result;
 		result.reserve(stops.size());
 		for (const auto& stop : stops) {
 			result.push_back(db_.SearchStop(stop));
@@ -101,54 +130,68 @@ namespace request_handler {
 		return result;
 	}
 
-	tuple<string, size_t> RequestHandler::QueryGetName(const string_view str) const {
+	svg::Document RequestHandler::RenderMap() const {
+		std::vector<BusPtr> buses = db_.GetBusesInVector();
+
+		std::vector<std::pair<StopPtr, StopStat>> stops;
+		for (StopPtr stop : db_.GetStopsInVector()) {
+			stops.emplace_back(std::pair<StopPtr, StopStat>{ stop, *GetStopStat(*stop.get()->name.get()) });
+		}
+		return mr_.MakeDocument(std::move(buses), std::move(stops));
+	}
+
+	void RequestHandler::SetSettings(renderer::RenderingSettings&& settings) {
+		mr_.SetSettings(std::move(settings));
+	}
+
+	std::tuple<std::string, size_t> RequestHandler::QueryGetName(const std::string_view str) const {
 		auto pos = str.find_first_of(' ', 0) + 1;
 		auto new_pos = str.find_first_of(':', pos);
 		if (new_pos == str.npos) {
-			return tuple<string, size_t>(move(str.substr(pos)), new_pos);
+			return std::tuple<std::string, size_t>(std::move(str.substr(pos)), new_pos);
 		}
 		auto name = str.substr(pos, new_pos - pos);
 
-		return tuple<string, size_t>(move(name), ++new_pos);
+		return std::tuple<std::string, size_t>(std::move(name), ++new_pos);
 	}
 
-	tuple<string, string> RequestHandler::SplitIntoLengthStop(string&& str) const {
+	std::tuple<std::string, std::string> RequestHandler::SplitIntoLengthStop(std::string&& str) const {
 		const auto pos = str.find_first_of(' ');
-		string length = str.substr(0, pos);
-		string name_stop = str.substr(pos + 4);
+		std::string length		= str.substr(0, pos);
+		std::string name_stop	= str.substr(pos + 4);
 
-		return { move(length), move(name_stop) };
+		return { std::move(length), std::move(name_stop) };
 	}
 
-	tuple<vector<string>, RequestHandler::SeparatorType> RequestHandler::SplitIntoWordsBySeparator(const string_view str) const {
-		vector<string> words;
+	std::tuple<std::vector<std::string>, RequestHandler::SeparatorType> RequestHandler::SplitIntoWordsBySeparator(const std::string_view str) const {
+		std::vector<std::string> words;
 		SeparatorType sep_type;
 
 		auto [name, pos_start] = QueryGetName(str);
-		words.push_back(move(name));
+		words.push_back(std::move(name));
 
 		const size_t str_sz = str.size();
-		string word;
+		std::string word;
 		for (size_t i = pos_start; i < str_sz; ++i) {
 			if (str[0] == 'B' && (str[i] == '>' || str[i] == '-')) {
 				sep_type = (str[i] == '>') ? SeparatorType::GREATER_THAN : SeparatorType::DASH;
-				words.push_back(move(word.substr(1, word.size() - 2)));
+				words.push_back(std::move(word.substr(1, word.size() - 2)));
 				word.clear();
 			} else if (str[0] == 'S' && str[i] == ',') {
-				words.push_back(move(word.substr(1, word.size() - 1)));
+				words.push_back(std::move(word.substr(1, word.size() - 1)));
 				word.clear();
 			} else {
 				word += str[i];
 			}
 		}
-		words.push_back(move(word.substr(1, word.size() - 1)));
+		words.push_back(std::move(word.substr(1, word.size() - 1)));
 
-		return tuple<vector<string>, SeparatorType>(move(words), sep_type);
+		return std::tuple<std::vector<std::string>, SeparatorType>(std::move(words), sep_type);
 	}
 
-	tuple<vector<string_view>, int> RequestHandler::WordsToRoute(const vector<string>& words, SeparatorType separator) const {
-		vector<string_view> result;
-		unordered_set<string_view, hash<string_view>> stops_unique_names;
+	std::tuple<std::vector<std::string_view>, int> RequestHandler::WordsToRoute(const std::vector<std::string>& words, SeparatorType separator) const {
+		std::vector<std::string_view> result;
+		std::unordered_set<std::string_view, std::hash<std::string_view>> stops_unique_names;
 		result.reserve(words.size() - 1);
 
 		for (size_t i = 1; i < words.size(); ++i) {
@@ -166,7 +209,7 @@ namespace request_handler {
 		}
 
 		return {
-			move(result),
+			std::move(result),
 			(int)stops_unique_names.size()
 		};
 	}

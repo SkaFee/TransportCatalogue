@@ -4,6 +4,21 @@ namespace svg {
 
     using namespace std::literals;
 
+    Point::Point(double x, double y)
+        : x(x)
+        , y(y)
+    {}
+
+    RenderContext::RenderContext(std::ostream& out)
+        : out(out)
+    {}
+
+    RenderContext::RenderContext(std::ostream& out, int indent_step, int indent)
+        : out(out)
+        , indent_step(indent_step)
+        , indent(indent)
+    {}
+
     RenderContext RenderContext::Indented() const {
         return { out, indent_step, indent + indent_step };
     }
@@ -13,6 +28,23 @@ namespace svg {
             out.put(' ');
         }
     }
+
+    void Object::Render(const RenderContext& context) const {
+        context.RenderIndent();
+        RenderObject(context);
+        context.out << "\n"sv;
+    }
+
+    Rgb::Rgb(uint8_t r, uint8_t g, uint8_t b)
+        : red(r)
+        , green(g)
+        , blue(b)
+    {}
+
+    Rgba::Rgba(uint8_t r, uint8_t g, uint8_t b, double o)
+        : Rgb(r, g, b)
+        , opacity(o)
+    {}
 
     std::ostream& operator<<(std::ostream& out, StrokeLineCap line_cap) {
         switch (line_cap) {
@@ -54,12 +86,6 @@ namespace svg {
         }
 
         return out;
-    }
-
-    void Object::Render(const RenderContext& context) const {
-        context.RenderIndent();
-        RenderObject(context);
-        context.out << std::endl;
     }
 
     Circle& Circle::SetCenter(Point center) {
@@ -149,19 +175,19 @@ namespace svg {
         for (const char letter : data_) {
             switch (letter) {
             case '\"':
-                text += "&quot;"sv;
+                text += "&quot;"s;
                 break;
             case '\'':
-                text += "&apos;"sv;
+                text += "&apos;"s;
                 break;
             case '<':
-                text += "&lt;"sv;
+                text += "&lt;"s;
                 break;
             case '>':
-                text += "&gt;"sv;
+                text += "&gt;"s;
                 break;
             case '&':
-                text += "&amp"sv;
+                text += "&amp"s;
                 break;
             default:
                 text += letter;
@@ -183,4 +209,4 @@ namespace svg {
         out << "</svg>"sv;
     }
 
-}  // namespace svg
+}

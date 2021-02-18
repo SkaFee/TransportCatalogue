@@ -14,32 +14,22 @@ namespace svg {
 
     struct Point {
         Point() = default;
-        Point(double x, double y)
-            : x(x)
-            , y(y) 
-        {}
+        Point(double x, double y);
 
         double x = 0;
         double y = 0;
     };
 
     struct RenderContext {
-        RenderContext(std::ostream& out)
-            : out(out)
-        {}
-
-        RenderContext(std::ostream& out, int indent_step, int indent = 0) 
-            : out(out)
-            , indent_step(indent_step)
-            , indent(indent)
-        {}
+        RenderContext(std::ostream& out);
+        RenderContext(std::ostream& out, int indent_step, int indent = 0);
 
         RenderContext Indented() const;
         void RenderIndent() const;
 
         std::ostream& out;
         int indent_step = 0;
-        int indent = 0;
+        int indent      = 0;
     };
 
     class Object {
@@ -56,6 +46,7 @@ namespace svg {
         ROUND,
         SQUARE,
     };
+
     enum class StrokeLineJoin {
         ARCS,
         BEVEL,
@@ -66,23 +57,17 @@ namespace svg {
 
     struct Rgb {
         Rgb() = default;
-        Rgb(uint8_t r, uint8_t g, uint8_t b)
-            : red(r)
-            , green(g)
-            , blue(b)
-        {}
+        Rgb(uint8_t r, uint8_t g, uint8_t b);
 
         uint8_t 
-            red = 0, 
-            green = 0, 
-            blue = 0;
+            red     = 0, 
+            green   = 0, 
+            blue    = 0;
     };
+
     struct Rgba : public Rgb {
         Rgba() = default;
-        Rgba(uint8_t r, uint8_t g, uint8_t b, double o)
-            : Rgb(r, g, b)
-            , opacity(o)
-        {}
+        Rgba(uint8_t r, uint8_t g, uint8_t b, double o);
 
         double opacity = 1.0;
     };
@@ -117,6 +102,7 @@ namespace svg {
             line_join_ = line_join;
             return AsOwner();
         }
+
     protected:
         ~PathProps() = default;
 
@@ -252,4 +238,4 @@ namespace svg {
         std::vector<std::unique_ptr<Object>> objects_;
     };
 
-}  // namespace svg
+}
