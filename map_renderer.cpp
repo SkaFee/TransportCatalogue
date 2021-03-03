@@ -51,7 +51,7 @@ namespace renderer {
     }
 
     void MapRenderer::AddBusesLines(svg::Document& doc, SphereProjector& proj, const std::vector<BusPtr>& buses) const {
-        int cnt = 0;
+        size_t cnt = 0;
         size_t sz_palette = settings_.color_palette.size();
         for (const BusPtr& bus : buses) {
             if (bus.get()->route.empty()) {
@@ -65,7 +65,7 @@ namespace renderer {
                 .SetStrokeLineCap(svg::StrokeLineCap::ROUND)
                 .SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
 
-            cnt = cnt == sz_palette ? 0 : cnt;
+            cnt = cnt == sz_palette ? 0u : cnt;
 
             for (const auto& stop_ptr : bus.get()->route) {
                 const auto& stop = *stop_ptr.get();
@@ -76,7 +76,7 @@ namespace renderer {
     }
 
     void MapRenderer::AddBusesNames(svg::Document& doc, SphereProjector& proj, const std::vector<BusPtr>& buses) const {
-        int cnt = 0;
+        size_t cnt = 0;
         size_t sz_palette = settings_.color_palette.size();
         for (const BusPtr& busptr : buses) {
             const auto& bus = *busptr.get();
@@ -103,7 +103,7 @@ namespace renderer {
             text
                 .SetFillColor(settings_.color_palette[cnt++ % sz_palette]);
 
-            cnt = cnt == sz_palette ? 0 : cnt;
+            cnt = cnt == sz_palette ? 0u : cnt;
 
             svg::Text text_substrate_last_stop = text_substrate;
             svg::Text text_last_stop = text;

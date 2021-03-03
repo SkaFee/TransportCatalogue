@@ -1,86 +1,142 @@
 #pragma once
 
 #include <iostream>
-#include <unordered_map>
+#include <map>
 #include <string>
-#include <vector>
 #include <variant>
-#include <memory>
-#include <functional>
-#include <utility>
+#include <vector>
 
 namespace json {
 
     class Node;
-    using Dict  = std::unordered_map<std::string, Node, std::hash<std::string>>;
+    using Dict = std::map<std::string, Node>;
     using Array = std::vector<Node>;
 
     class ParsingError : public std::runtime_error {
     public:
-        using std::runtime_error::runtime_error;
+        using runtime_error::runtime_error;
     };
 
-    using NodeValue = std::variant<std::nullptr_t, Array, Dict, bool, int, double, std::string>;
-
-    class Node final {
+    class Node final
+        : private std::variant<std::nullptr_t, Array, Dict, bool, int, double, std::string> {
     public:
-        Node();
-        template <typename T>
-        Node(T v)
-            : value_(std::make_shared<NodeValue>(std::move(v)))
-        {}
+        using variant::variant;
+        using Value = variant;
 
-        bool operator==(const Node& node) const noexcept;
-        bool operator!=(const Node& node) const noexcept;
+        bool IsInt() const {
+            return std::holds_alternative<int>(*this);
+        }
+        int AsInt() const {
+            using namespace std::literals;
+            if (!IsInt()) {
+                throw std::logic_error("Not an int"s);
+            }
+            return std::get<int>(*this);
+        }
 
-        int                 AsInt()     const;
-        double              AsDouble()  const;
-        const std::string&  AsString()  const;
-        bool                AsBool()    const;
-        const Array&        AsArray()   const;
-        const Dict&         AsMap()     const;
+        bool IsPureDouble() const {
+            return std::holds_alternative<double>(*this);
+        }
+        bool IsDouble() const {
+            return IsInt() || IsPureDouble();
+        }
+        double AsDouble() const {
+            using namespace std::literals;
+            if (!IsDouble()) {
+                throw std::logic_error("Not a double"s);
+            }
+            return IsPureDouble() ? std::get<double>(*this) : AsInt();
+        }
 
-        bool IsNull()       const noexcept;
-        bool IsInt()        const noexcept;
-        bool IsDouble()     const noexcept;
-        bool IsPureDouble() const noexcept;
-        bool IsString()     const noexcept;
-        bool IsBool()       const noexcept;
-        bool IsArray()      const noexcept;
-        bool IsMap()        const noexcept;
+        bool IsBool() const {
+            return std::holds_alternative<bool>(*this);
+        }
+        bool AsBool() const {
+            using namespace std::literals;
+            if (!IsBool()) {
+                throw std::logic_error("Not a bool"s);
+            }
 
-        void Print(std::ostream& out) const noexcept;
+            return std::get<bool>(*this);
+        }
+
+        bool IsNull() const {
+            return std::holds_alternative<std::nullptr_t>(*this);
+        }
+
+        bool IsArray() const {
+            return std::holds_alternative<Array>(*this);
+        }
+        const Array& AsArray() const {
+            using namespace std::literals;
+            if (!IsArray()) {
+                throw std::logic_error("Not an array"s);
+            }
+
+            return std::get<Array>(*this);
+        }
+
+        bool IsString() const {
+            return std::holds_alternative<std::string>(*this);
+        }
+        const std::string& AsString() const {
+            using namespace std::literals;
+            if (!IsString()) {
+                throw std::logic_error("Not a string"s);
+            }
+
+            return std::get<std::string>(*this);
+        }
+
+        bool IsDict() const {
+            return std::holds_alternative<Dict>(*this);
+        }
+        const Dict& AsDict() const {
+            using namespace std::literals;
+            if (!IsDict()) {
+                throw std::logic_error("Not a dict"s);
+            }
+
+            return std::get<Dict>(*this);
+        }
+
+        bool operator==(const Node& rhs) const {
+            return GetValue() == rhs.GetValue();
+        }
+
+        const Value& GetValue() const {
+            return *this;
+        }
+    };
+
+    inline bool operator!=(const Node& lhs, const Node& rhs) {
+        return !(lhs == rhs);
+    }
+
+    class Document {
+    public:
+        explicit Document(Node root)
+            : root_(std::move(root)) {
+        }
+
+        const Node& GetRoot() const {
+            return root_;
+        }
 
     private:
-        std::shared_ptr<NodeValue> value_;
-
-        struct Printer {
-            std::ostream& output;
-
-            void operator()(std::nullptr_t)             const noexcept;
-            void operator()(const Array& arr)           const noexcept;
-            void operator()(const Dict& dict)           const noexcept;
-            void operator()(const bool b)               const noexcept;
-            void operator()(const int num)              const noexcept;
-            void operator()(const double num)           const noexcept;
-            void operator()(const std::string_view str) const noexcept;
-        };
+        Node root_;
     };
 
-    class Document final {
-    public:
-        explicit Document(Node root);
+    inline bool operator==(const Document& lhs, const Document& rhs) {
+        return lhs.GetRoot() == rhs.GetRoot();
+    }
 
-        bool operator==(const Document& doc) const noexcept;
-        bool operator!=(const Document& doc) const noexcept;
-
-        const Node& GetRoot() const;
-
-    private:
-        std::shared_ptr<Node> root_;
-    };
+    inline bool operator!=(const Document& lhs, const Document& rhs) {
+        return !(lhs == rhs);
+    }
 
     Document Load(std::istream& input);
 
     void Print(const Document& doc, std::ostream& output);
+
 }

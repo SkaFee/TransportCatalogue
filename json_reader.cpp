@@ -19,7 +19,7 @@ namespace json_reader {
 	void JsonReader::Start(std::istream& input, std::ostream& out) {
 		const json::Document doc = json::Load(input);
 		const json::Node& node = doc.GetRoot();
-		const json::Dict& dict = node.AsMap();
+		const json::Dict& dict = node.AsDict();
 		
 		if (dict.count("base_requests"s)) {
 			FillTransportCatalogue(dict);
@@ -37,7 +37,7 @@ namespace json_reader {
 		std::vector<std::pair<const std::string&, const json::Dict&>> stops_road_distances;
 
 		for (const auto& req_node : base_requests) {
-			const json::Dict& req = req_node.AsMap();
+			const json::Dict& req = req_node.AsDict();
 			if (req.at("type"s).AsString() == "Stop"s) {
 				stops_road_distances.emplace_back(std::pair<const std::string&, const json::Dict&>{ req.at("name"s).AsString(), FillStop(req) });
 			} 
@@ -50,7 +50,7 @@ namespace json_reader {
 		}
 
 		for (const auto& req_node : base_requests) {
-			const json::Dict& req = req_node.AsMap();
+			const json::Dict& req = req_node.AsDict();
 			if (req.at("type"s).AsString() == "Bus"s) {
 				FillBus(req);
 			}
@@ -64,7 +64,7 @@ namespace json_reader {
 		double longitude = node_longitude.IsPureDouble() ? node_longitude.AsDouble() : node_longitude.AsInt();
 		Stop stop(std::move(std::string(stop_req.at("name"s).AsString())), latitude, longitude);
 		rh_.AddStop(std::move(stop));
-		return stop_req.at("road_distances"s).AsMap();
+		return stop_req.at("road_distances"s).AsDict();
 	}
 
 	void JsonReader::FillBus(const json::Dict& bus_req) {
@@ -82,7 +82,7 @@ namespace json_reader {
 	renderer::RenderingSettings JsonReader::ReadRenderingSettings(const json::Dict& dict) {
 		renderer::RenderingSettings settings;
 
-		const json::Dict& dict_deeper = dict.at("render_settings"s).AsMap();
+		const json::Dict& dict_deeper = dict.at("render_settings"s).AsDict();
 
 		const json::Node& node_width = dict_deeper.at("width"s);
 		settings.width = GetDoubleFromNode(node_width);
@@ -169,7 +169,7 @@ namespace json_reader {
 		json::Array result;
 		const json::Array& stat_requests = dict.at("stat_requests"s).AsArray();
 		for (const auto& req_node : stat_requests) {
-			const json::Dict& req = req_node.AsMap();
+			const json::Dict& req = req_node.AsDict();
 			const std::string& type = req.at("type"s).AsString();
 			json::Node node;
 			if (type == "Stop"s) {
