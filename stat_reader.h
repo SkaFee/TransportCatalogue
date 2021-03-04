@@ -4,7 +4,9 @@
 #include <vector>
 
 namespace withdrawal_requests {
+
 	std::vector<std::string> Input();
+
 	void OutputBusInformation(
 		bool existing,
 		const std::string& name,
@@ -13,6 +15,7 @@ namespace withdrawal_requests {
 		const int route_actual_length,
 		const double curvature
 	);
+
 	void OutputStopInformation(
 		bool existing,
 		const std::string& name,

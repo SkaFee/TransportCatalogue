@@ -3,10 +3,10 @@
 #include <iomanip>
 #include <iostream>
 
-using namespace std;
-
 namespace withdrawal_requests {
-	vector<string> Input() {
+
+	std::vector<std::string> Input() {
+		using namespace std;
 		vector<string> result;
 
 		int quantity;
@@ -30,8 +30,9 @@ namespace withdrawal_requests {
 		const int stops_on_route,
 		const int unique_stops,
 		const int routh_length,
-		const double curvature
-	) {
+		const double curvature) 
+	{
+		using namespace std;
 		if (existing) {
 			cout
 				<< "Bus "s << name << ": "s
@@ -49,8 +50,9 @@ namespace withdrawal_requests {
 	void OutputStopInformation(
 		bool existing,
 		const std::string& name,
-		const std::vector<std::string>& passing_buses
-	) {
+		const std::vector<std::string>& passing_buses)
+	{
+		using namespace std;
 		if (existing) {
 			if (passing_buses.size()) {
 				cout << "Stop "s << name << ": buses"s;

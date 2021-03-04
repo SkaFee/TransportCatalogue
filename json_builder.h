@@ -42,6 +42,7 @@ namespace json {
 	class Builder final {
 	public:
 		Builder() = default;
+
 		KeyItemContext Key(std::string s);
 		Builder& Value(Node::Value v);
 		DictItemContext StartDict();
@@ -128,46 +129,41 @@ namespace json {
 		Builder& builder_;
 	};
 
-	class KeyItemContext final : public StartDictCommand, public StartArrayCommand, public KeyValueCommand {
+	class KeyItemContext final 
+		: public StartDictCommand
+		, public StartArrayCommand
+		, public KeyValueCommand {
 	public:
-		KeyItemContext(Builder& b)
-			: StartDictCommand(b)
-			, StartArrayCommand(b)
-			, KeyValueCommand(b)
-		{}
+		KeyItemContext(Builder& b);
 	};
 
-	class Key_ValueContext final : public Key_EndDictCommands {
+	class Key_ValueContext final 
+		: public Key_EndDictCommands {
 	public:
-		Key_ValueContext(Builder& b)
-			: Key_EndDictCommands(b)
-		{}
+		Key_ValueContext(Builder& b);
 	};
 
-	class DictItemContext final : public Key_EndDictCommands {
+	class DictItemContext final 
+		: public Key_EndDictCommands {
 	public:
-		DictItemContext(Builder& b)
-			: Key_EndDictCommands(b)
-		{}
+		DictItemContext(Builder& b);
 	};
 
-	class ArrayValueItemContext final : public StartDictCommand, public EndArrayCommand, public StartArrayCommand, public ArrayValueCommand {
+	class ArrayValueItemContext final 
+		: public StartDictCommand
+		, public EndArrayCommand
+		, public StartArrayCommand
+		, public ArrayValueCommand {
 	public:
-		ArrayValueItemContext(Builder& b)
-			: StartDictCommand(b)
-			, EndArrayCommand(b)
-			, StartArrayCommand(b)
-			, ArrayValueCommand(b)
-		{}
+		ArrayValueItemContext(Builder& b);
 	};
 
-	class ArrayItemContext final : public StartDictCommand, public EndArrayCommand, public StartArrayCommand, public ArrayValueCommand {
+	class ArrayItemContext final 
+		: public StartDictCommand
+		, public EndArrayCommand
+		, public StartArrayCommand
+		, public ArrayValueCommand {
 	public:
-		ArrayItemContext(Builder& b)
-			: StartDictCommand(b)
-			, EndArrayCommand(b)
-			, StartArrayCommand(b)
-			, ArrayValueCommand(b)
-		{}
+		ArrayItemContext(Builder& b);
 	};
 }

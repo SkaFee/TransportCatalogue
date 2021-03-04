@@ -6,7 +6,6 @@
 #include <functional>
 
 namespace request_handler {
-
 	using namespace domain;
 
 	RequestHandler::RequestHandler(transport::TransportCatalogue& db, renderer::MapRenderer& mr)
@@ -18,7 +17,13 @@ namespace request_handler {
 		auto [words, separator] = SplitIntoWordsBySeparator(raw_query);
 		auto [route, unique_stops] = WordsToRoute(words, separator);
 		const auto [geographic, actual] = ComputeRouteLengths(route);
-		Bus new_bus(std::move(words[0]), std::move(StopsToStopPtr(std::move(route))), unique_stops, actual, geographic);
+		Bus new_bus(
+			std::move(words[0]), 
+			std::move(StopsToStopPtr(std::move(route))), 
+			unique_stops, 
+			actual, 
+			geographic
+		);
 
 		db_.AddBus(std::move(new_bus));
 	}
@@ -29,7 +34,11 @@ namespace request_handler {
 
 	void RequestHandler::AddStop(const std::string_view raw_query) {
 		auto [words, _] = SplitIntoWordsBySeparator(raw_query);
-		Stop new_stop(std::move(words[0]), std::stod(words[1]), std::stod(words[2]));
+		Stop new_stop(
+			std::move(words[0]), 
+			std::stod(words[1]), 
+			std::stod(words[2])
+		);
 
 		db_.AddStop(std::move(new_stop));
 	}
@@ -76,7 +85,7 @@ namespace request_handler {
 		}
 
 		return std::optional<BusStat>({
-			std::move(bus_name),
+			bus_name,
 			static_cast<int>(bus.get()->route.size()),
 			bus->unique_stops,
 			bus->route_actual_length,
@@ -98,6 +107,7 @@ namespace request_handler {
 
 	const std::unordered_set<BusPtr>* RequestHandler::GetBusesByStop(const std::string_view stop_name) const {
 		StopPtr stop = db_.SearchStop(stop_name);
+
 		return db_.GetPassingBusesByStop(stop);
 	}
 
@@ -127,6 +137,7 @@ namespace request_handler {
 		for (const auto& stop : stops) {
 			result.push_back(db_.SearchStop(stop));
 		}
+
 		return result;
 	}
 
@@ -137,6 +148,7 @@ namespace request_handler {
 		for (StopPtr stop : db_.GetStopsInVector()) {
 			stops.emplace_back(std::pair<StopPtr, StopStat>{ stop, *GetStopStat(*stop.get()->name.get()) });
 		}
+
 		return mr_.MakeDocument(std::move(buses), std::move(stops));
 	}
 

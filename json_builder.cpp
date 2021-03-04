@@ -11,20 +11,22 @@ namespace json {
 				stack.back()->IsArray() &&
 				(
 					e == LastUsedMetod::VALUE		||
-					e == LastUsedMetod::START_ARRAY ||
+					e == LastUsedMetod::START_ARRAY	||
 					e == LastUsedMetod::END_ARRAY	||
 					e == LastUsedMetod::END_DICT
 				);
 		}
+
 		bool InRoot(LastUsedMetod e, const std::vector<Node*>& stack) {
 			return
 				e != LastUsedMetod::NONE	&&
 				stack.empty()				&&
 				(
-					e == LastUsedMetod::END_ARRAY ||
+					e == LastUsedMetod::END_ARRAY	||
 					e == LastUsedMetod::END_DICT
 				);
 		}
+
 		bool InStack(LastUsedMetod e, const std::vector<Node*>& stack) {
 			return
 				stack.size() == 1u &&
@@ -36,31 +38,33 @@ namespace json {
 		}
 	}
 
-
-
 	Node NodeGetter::operator()(std::nullptr_t) const {
 		return Node();
 	}
+
 	Node NodeGetter::operator()(std::string&& value) const {
 		return Node(std::move(value));
 	}
+
 	Node NodeGetter::operator()(bool&& value) const {
 		return Node(value);
 	}
+
 	Node NodeGetter::operator()(int&& value) const {
 		return Node(value);
 	}
+
 	Node NodeGetter::operator()(double&& value) const {
 		return Node(value);
 	}
+
 	Node NodeGetter::operator()(Array&& value) const {
 		return Node(std::move(value));
 	}
+
 	Node NodeGetter::operator()(Dict&& value) const {
 		return Node(std::move(value));
 	}
-
-
 
 	KeyItemContext Builder::Key(std::string s) {
 		using namespace std::literals;
@@ -94,8 +98,8 @@ namespace json {
 		} else {
 			throw std::logic_error("Wrong call Value()"s);
 		}
-
 		last_method_ = LastUsedMetod::VALUE;
+
 		return *this;
 	}
 
@@ -211,43 +215,47 @@ namespace json {
 			},
 			std::move(v)
 		);
+
 		return result;
 	}
 
 	bool Builder::LMIsNone() {
 		return last_method_ == LastUsedMetod::NONE;
 	}
+
 	bool Builder::LMIsStartDict() {
 		return last_method_ == LastUsedMetod::START_DICT;
 	}
+
 	bool Builder::LMIsKey() {
 		return last_method_ == LastUsedMetod::KEY;
 	}
+
 	bool Builder::LMIsValue() {
 		return last_method_ == LastUsedMetod::VALUE;
 	}
+
 	bool Builder::LMIsEndDict() {
 		return last_method_ == LastUsedMetod::END_DICT;
 	}
+
 	bool Builder::LMIsStartArray() {
 		return last_method_ == LastUsedMetod::START_ARRAY;
 	}
+
 	bool Builder::LMIsEndArray() {
 		return last_method_ == LastUsedMetod::END_ARRAY;
 	}
 	
-
-
 	KeyValueCommand::KeyValueCommand(Builder& b)
 		: builder_(b)
 	{}
 
 	Key_ValueContext KeyValueCommand::Value(Node::Value v) {
 		builder_.Value(std::move(v));
+
 		return { builder_ };
 	}
-
-
 
 	ArrayValueCommand::ArrayValueCommand(Builder& b)
 		: builder_(b)
@@ -255,10 +263,9 @@ namespace json {
 
 	ArrayValueItemContext ArrayValueCommand::Value(Node::Value v) {
 		builder_.Value(std::move(v));
+
 		return { builder_ };
 	}
-
-
 
 	StartArrayCommand::StartArrayCommand(Builder& b)
 		: builder_(b)
@@ -268,8 +275,6 @@ namespace json {
 		return builder_.StartArray();
 	}
 
-
-
 	EndArrayCommand::EndArrayCommand(Builder& b)
 		: builder_(b)
 	{}
@@ -277,8 +282,6 @@ namespace json {
 	Builder& EndArrayCommand::EndArray() {
 		return builder_.EndArray();
 	}
-
-
 
 	Key_EndDictCommands::Key_EndDictCommands(Builder& builder)
 		: builder_(builder)
@@ -292,8 +295,6 @@ namespace json {
 		return builder_.EndDict();
 	}
 
-
-
 	StartDictCommand::StartDictCommand(Builder& builder)
 		: builder_(builder)
 	{}
@@ -301,5 +302,33 @@ namespace json {
 	DictItemContext StartDictCommand::StartDict() {
 		return builder_.StartDict();
 	}
+
+	KeyItemContext::KeyItemContext(Builder& b)
+		: StartDictCommand(b)
+		, StartArrayCommand(b)
+		, KeyValueCommand(b)
+	{}
+
+	Key_ValueContext::Key_ValueContext(Builder& b)
+		: Key_EndDictCommands(b)
+	{}
+
+	DictItemContext::DictItemContext(Builder& b)
+		: Key_EndDictCommands(b)
+	{}
+
+	ArrayValueItemContext::ArrayValueItemContext(Builder& b)
+		: StartDictCommand(b)
+		, EndArrayCommand(b)
+		, StartArrayCommand(b)
+		, ArrayValueCommand(b)
+	{}
+
+	ArrayItemContext::ArrayItemContext(Builder& b)
+		: StartDictCommand(b)
+		, EndArrayCommand(b)
+		, StartArrayCommand(b)
+		, ArrayValueCommand(b)
+	{}
 
 }

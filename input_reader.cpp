@@ -1,13 +1,11 @@
 #include "input_reader.h"
 
-#include <vector>
-#include <string>
 #include <iostream>
 
-using namespace std;
-
 namespace filling_requests {
-	vector<string> Input() {
+
+	std::vector<std::string> Input() {
+		using namespace std;
 		vector<string> result;
 
 		int quantity;

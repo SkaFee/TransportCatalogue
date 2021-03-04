@@ -8,9 +8,9 @@
 using namespace std::literals;
 
 int main() {
-    renderer::MapRenderer mr;
-    transport::TransportCatalogue db;
-    request_handler::RequestHandler rh(db, mr);
-    json_reader::JsonReader js_reader(rh);
-    js_reader.Start(std::cin, std::cout);
+	renderer::MapRenderer mr;
+	transport::TransportCatalogue db;
+	request_handler::RequestHandler rh(db, mr);
+	json_reader::JsonReader js_reader(rh);
+	js_reader.Start(std::cin, std::cout);
 }

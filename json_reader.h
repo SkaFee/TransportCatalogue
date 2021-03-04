@@ -22,7 +22,7 @@ namespace json_reader {
 	private:
 		request_handler::RequestHandler& rh_;
 
-		void FillTransportCatalogue(const json::Dict& dict);
+		void				FillTransportCatalogue(const json::Dict& dict);
 		const json::Dict&	FillStop(const json::Dict& stop_req);
 		void				FillBus(const json::Dict& bus_req);
 

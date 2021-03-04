@@ -2,10 +2,10 @@
 
 namespace geo {
 
-    struct Coordinates {
-        double lat;
-        double lng;
-    };
+	struct Coordinates {
+		double lat;
+		double lng;
+	};
 
-    double ComputeDistance(Coordinates from, Coordinates to);
+	double ComputeDistance(Coordinates from, Coordinates to);
 }
