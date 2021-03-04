@@ -6,7 +6,6 @@
 namespace json {
 
 	namespace {
-
 		using namespace std::literals;
 
 		Node LoadNode(std::istream& input);

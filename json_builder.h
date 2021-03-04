@@ -17,13 +17,13 @@ namespace json {
 	};
 
 	struct NodeGetter {
-		Node operator() (std::nullptr_t)		const;
-		Node operator() (std::string&& value)	const;
-		Node operator() (bool&& value)			const;
-		Node operator() (int&& value)			const;
-		Node operator() (double&& value)		const;
-		Node operator() (Array&& value)			const;
-		Node operator() (Dict&& value)			const;
+		Node operator() (std::nullptr_t)      const;
+		Node operator() (std::string&& value) const;
+		Node operator() (bool&& value)        const;
+		Node operator() (int&& value)         const;
+		Node operator() (double&& value)      const;
+		Node operator() (Array&& value)       const;
+		Node operator() (Dict&& value)        const;
 	};
 
 	class StartArrayCommand;

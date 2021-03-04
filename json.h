@@ -9,8 +9,8 @@
 namespace json {
 
 	class Node;
-	using Dict	= std::map<std::string, Node>;
-	using Array	= std::vector<Node>;
+	using Dict  = std::map<std::string, Node>;
+	using Array = std::vector<Node>;
 
 	class ParsingError
 		: public std::runtime_error {
@@ -24,26 +24,26 @@ namespace json {
 		using variant::variant;
 		using Value = variant;
 
-		bool IsInt()	const;
-		int AsInt()		const;
+		bool IsInt() const;
+		int AsInt()  const;
 
-		bool IsPureDouble()	const;
-		bool IsDouble()		const;
-		double AsDouble()	const;
+		bool IsPureDouble() const;
+		bool IsDouble()     const;
+		double AsDouble()   const;
 
 		bool IsBool() const;
 		bool AsBool() const;
 
 		bool IsNull() const;
 
-		bool IsArray()			const;
-		const Array& AsArray()	const;
+		bool IsArray()         const;
+		const Array& AsArray() const;
 
-		bool IsString()					const;
-		const std::string& AsString()	const;
+		bool IsString()               const;
+		const std::string& AsString() const;
 
-		bool IsDict()			const;
-		const Dict& AsDict()	const;
+		bool IsDict()        const;
+		const Dict& AsDict() const;
 
 		bool operator==(const Node& rhs) const;
 

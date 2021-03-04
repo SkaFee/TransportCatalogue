@@ -18,8 +18,8 @@ namespace json_reader {
 
 	void JsonReader::Start(std::istream& input, std::ostream& out) {
 		const json::Document doc = json::Load(input);
-		const json::Node& node = doc.GetRoot();
-		const json::Dict& dict = node.AsDict();
+		const json::Node& node   = doc.GetRoot();
+		const json::Dict& dict   = node.AsDict();
 		
 		if (dict.count("base_requests"s)) {
 			FillTransportCatalogue(dict);

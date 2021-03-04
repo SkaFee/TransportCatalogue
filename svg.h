@@ -28,8 +28,8 @@ namespace svg {
 		void RenderIndent() const;
 
 		std::ostream& out;
-		int indent_step	= 0;
-		int indent		= 0;
+		int indent_step = 0;
+		int indent      = 0;
 	};
 
 	class Object {
@@ -60,9 +60,9 @@ namespace svg {
 		Rgb(uint8_t r, uint8_t g, uint8_t b);
 
 		uint8_t
-			red = 0,
+			red   = 0,
 			green = 0,
-			blue = 0;
+			blue  = 0;
 	};
 
 	struct Rgba 
@@ -133,11 +133,11 @@ namespace svg {
 		}
 
 	private:
-		std::optional<Color>			fill_color_;
-		std::optional<Color>			stroke_color_;
-		std::optional<double>			stroke_width_;
-		std::optional<StrokeLineCap>	line_cap_;
-		std::optional<StrokeLineJoin>	line_join_;
+		std::optional<Color>          fill_color_;
+		std::optional<Color>          stroke_color_;
+		std::optional<double>         stroke_width_;
+		std::optional<StrokeLineCap>  line_cap_;
+		std::optional<StrokeLineJoin> line_join_;
 
 		Owner& AsOwner() {
 			return static_cast<Owner&>(*this);
@@ -157,17 +157,17 @@ namespace svg {
 			void operator()(const Rgb& rgb) {
 				using namespace std::literals;
 				out << "rgb("sv
-					<< (int)rgb.red		<< ","sv
-					<< (int)rgb.green	<< ","sv
-					<< (int)rgb.blue	<< ")"sv;
+					<< (int)rgb.red   << ","sv
+					<< (int)rgb.green << ","sv
+					<< (int)rgb.blue  << ")"sv;
 			}
 			void operator()(const Rgba& rgba) {
 				using namespace std::literals;
 				out << "rgba("sv
-					<< (int)rgba.red	<< ","sv
-					<< (int)rgba.green	<< ","sv
-					<< (int)rgba.blue	<< ","sv
-					<< rgba.opacity		<< ")"sv;
+					<< (int)rgba.red    << ","sv
+					<< (int)rgba.green  << ","sv
+					<< (int)rgba.blue   << ","sv
+					<< rgba.opacity     << ")"sv;
 			}
 		};
 	};

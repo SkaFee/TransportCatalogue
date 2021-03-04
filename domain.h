@@ -22,8 +22,8 @@ namespace domain {
 
 		std::shared_ptr<std::string> name;
 		std::vector<StopPtr> route;
-		int	unique_stops = 0;
-		int	route_actual_length = 0;
+		int unique_stops               = 0;
+		int route_actual_length        = 0;
 		double route_geographic_length = 0;
 		StopPtr last_stop_name;
 	};
@@ -34,16 +34,16 @@ namespace domain {
 		double GetGeographicDistanceTo(StopPtr stop_to) const;
 
 		std::shared_ptr<std::string> name;
-		double latitude = 0;
+		double latitude  = 0;
 		double longitude = 0;
 	};
 
 	struct BusStat final {
 		std::string_view name;
-		int	stops_on_route = 0;
-		int	unique_stops = 0;
-		int	routh_actual_length = 0;
-		double curvature = 0.0;
+		int stops_on_route      = 0;
+		int unique_stops        = 0;
+		int routh_actual_length = 0;
+		double curvature        = 0.0;
 	};
 
 	struct StopStat final {

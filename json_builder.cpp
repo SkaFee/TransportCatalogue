@@ -10,19 +10,19 @@ namespace json {
 			return
 				stack.back()->IsArray() &&
 				(
-					e == LastUsedMetod::VALUE		||
-					e == LastUsedMetod::START_ARRAY	||
-					e == LastUsedMetod::END_ARRAY	||
+					e == LastUsedMetod::VALUE       ||
+					e == LastUsedMetod::START_ARRAY ||
+					e == LastUsedMetod::END_ARRAY   ||
 					e == LastUsedMetod::END_DICT
 				);
 		}
 
 		bool InRoot(LastUsedMetod e, const std::vector<Node*>& stack) {
 			return
-				e != LastUsedMetod::NONE	&&
-				stack.empty()				&&
+				e != LastUsedMetod::NONE &&
+				stack.empty()            &&
 				(
-					e == LastUsedMetod::END_ARRAY	||
+					e == LastUsedMetod::END_ARRAY ||
 					e == LastUsedMetod::END_DICT
 				);
 		}
@@ -31,8 +31,8 @@ namespace json {
 			return
 				stack.size() == 1u &&
 				(
-					e == LastUsedMetod::END_ARRAY	||
-					e == LastUsedMetod::END_DICT	||
+					e == LastUsedMetod::END_ARRAY ||
+					e == LastUsedMetod::END_DICT  ||
 					e == LastUsedMetod::VALUE
 				);
 		}

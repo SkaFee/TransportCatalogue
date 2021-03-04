@@ -69,9 +69,9 @@ namespace renderer {
 
 	private:
 		double padding_;
-		double min_lon_		= 0;
-		double max_lat_		= 0;
-		double zoom_coeff_	= 0;
+		double min_lon_    = 0;
+		double max_lat_    = 0;
+		double zoom_coeff_ = 0;
 
 		const double EPSILON = 1e-6;
 		bool IsZero(double value) {
@@ -80,20 +80,20 @@ namespace renderer {
 	};
 
 	struct RenderingSettings {
-		double width		= 0;
-		double height		= 0;
-		double padding		= 0;
-		double line_width	= 0;
-		double stop_radius	= 0;
+		double width       = 0;
+		double height      = 0;
+		double padding     = 0;
+		double line_width  = 0;
+		double stop_radius = 0;
 
-		int			bus_label_font_size = 0;
-		svg::Point	bus_label_offset;
+		int        bus_label_font_size = 0;
+		svg::Point bus_label_offset;
 
-		int			stop_label_font_size = 0;
-		svg::Point	stop_label_offset;
+		int        stop_label_font_size = 0;
+		svg::Point stop_label_offset;
 
-		svg::Color	underlayer_color;
-		double		underlayer_width = 0;
+		svg::Color underlayer_color;
+		double     underlayer_width = 0;
 
 		std::vector<svg::Color> color_palette;
 	};
@@ -121,9 +121,9 @@ namespace renderer {
 			return result;
 		}
 
-		void AddBusesLines(svg::Document& doc, SphereProjector& proj, const std::vector<domain::BusPtr>& buses)									const;
-		void AddBusesNames(svg::Document& doc, SphereProjector& proj, const std::vector<domain::BusPtr>& buses)									const;
-		void AddStopsCircles(svg::Document& doc, SphereProjector& proj, const std::vector<std::pair<domain::StopPtr, domain::StopStat>>& stops)	const;
-		void AddStopsNames(svg::Document& doc, SphereProjector& proj, const std::vector<std::pair<domain::StopPtr, domain::StopStat>>& stops)	const;
+		void AddBusesLines(svg::Document& doc, SphereProjector& proj, const std::vector<domain::BusPtr>& buses)                                 const;
+		void AddBusesNames(svg::Document& doc, SphereProjector& proj, const std::vector<domain::BusPtr>& buses)                                 const;
+		void AddStopsCircles(svg::Document& doc, SphereProjector& proj, const std::vector<std::pair<domain::StopPtr, domain::StopStat>>& stops) const;
+		void AddStopsNames(svg::Document& doc, SphereProjector& proj, const std::vector<std::pair<domain::StopPtr, domain::StopStat>>& stops)   const;
 	};
 }
