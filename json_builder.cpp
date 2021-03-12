@@ -6,9 +6,9 @@ namespace json {
 
 	namespace detail {
 
-		bool IsNodeOfArray(LastUsedMetod e, const std::vector<Node*>& stack) {
+		bool IsNodeOfArray(LastUsedMetod e, const std::vector<Node>& stack) {
 			return
-				stack.back()->IsArray() &&
+				stack.back().IsArray() &&
 				(
 					e == LastUsedMetod::VALUE       ||
 					e == LastUsedMetod::START_ARRAY ||
@@ -17,7 +17,7 @@ namespace json {
 				);
 		}
 
-		bool InRoot(LastUsedMetod e, const std::vector<Node*>& stack) {
+		bool InRoot(LastUsedMetod e, const std::vector<Node>& stack) {
 			return
 				e != LastUsedMetod::NONE &&
 				stack.empty()            &&
@@ -27,7 +27,7 @@ namespace json {
 				);
 		}
 
-		bool InStack(LastUsedMetod e, const std::vector<Node*>& stack) {
+		bool InStack(LastUsedMetod e, const std::vector<Node>& stack) {
 			return
 				stack.size() == 1u &&
 				(
@@ -68,7 +68,7 @@ namespace json {
 
 	KeyItemContext Builder::Key(std::string s) {
 		using namespace std::literals;
-		if (nodes_stack_.empty() || !nodes_stack_.back()->IsDict()) {
+		if (nodes_stack_.empty() || !nodes_stack_.back().IsDict()) {
 			throw std::logic_error("Called Key() outside the dictionary"s);
 		}
 		if (last_method_ == LastUsedMetod::KEY) {
@@ -83,18 +83,18 @@ namespace json {
 	Builder& Builder::Value(Node::Value v) {
 		using namespace std::literals;
 		if (last_method_ == LastUsedMetod::NONE) {
-			nodes_stack_.emplace_back(new Node(MakeNode(std::move(v))));
-		} else if (nodes_stack_.back()->IsDict() && last_method_ == LastUsedMetod::KEY) {
-			Dict tmp_dict = nodes_stack_.back()->AsDict();
+			nodes_stack_.emplace_back(std::move(MakeNode(std::move(v))));
+		} else if (nodes_stack_.back().IsDict() && last_method_ == LastUsedMetod::KEY) {
+			Dict tmp_dict = nodes_stack_.back().AsDict();
 			tmp_dict[key_stack_.back()] = MakeNode(std::move(v));
 			key_stack_.pop_back();
 			nodes_stack_.pop_back();
-			nodes_stack_.push_back(new Node(tmp_dict));
+			nodes_stack_.emplace_back(std::move(tmp_dict));
 		} else if (detail::IsNodeOfArray(last_method_, nodes_stack_)) {
-			Array tmp_arr = nodes_stack_.back()->AsArray();
+			Array tmp_arr = nodes_stack_.back().AsArray();
 			tmp_arr.push_back(std::move(MakeNode(std::move(v))));
 			nodes_stack_.pop_back();
-			nodes_stack_.emplace_back(new Node(std::move(tmp_arr)));
+			nodes_stack_.emplace_back(std::move(tmp_arr));
 		} else {
 			throw std::logic_error("Wrong call Value()"s);
 		}
@@ -106,15 +106,15 @@ namespace json {
 	DictItemContext Builder::StartDict() {
 		using namespace std::literals;
 		if (last_method_ == LastUsedMetod::NONE) {
-
-		} else if (nodes_stack_.back()->IsDict() && last_method_ == LastUsedMetod::KEY) {
-
+			//do nothing here
+		} else if (nodes_stack_.back().IsDict() && last_method_ == LastUsedMetod::KEY) {
+			//do nothing here
 		} else if (detail::IsNodeOfArray(last_method_, nodes_stack_)) {
-
+			//do nothing here
 		} else {
 			throw std::logic_error("Wrong call StartDict()"s);
 		}
-		nodes_stack_.emplace_back(new Node(std::move(Dict{})));
+		nodes_stack_.emplace_back(std::move(Dict{}));
 		last_method_ = LastUsedMetod::START_DICT;
 
 		return { *this };
@@ -123,15 +123,15 @@ namespace json {
 	ArrayItemContext Builder::StartArray() {
 		using namespace std::literals;
 		if (last_method_ == LastUsedMetod::NONE) {
-
-		} else if (nodes_stack_.back()->IsDict() && last_method_ == LastUsedMetod::KEY) {
-
+			//do nothing here
+		} else if (nodes_stack_.back().IsDict() && last_method_ == LastUsedMetod::KEY) {
+			//do nothing here
 		} else if (detail::IsNodeOfArray(last_method_, nodes_stack_)) {
-
+			//do nothing here
 		} else {
 			throw std::logic_error("Wrong call StartArray()"s);
 		}
-		nodes_stack_.emplace_back(new Node(std::move(Array{})));
+		nodes_stack_.emplace_back(std::move(Array{}));
 		last_method_ = LastUsedMetod::START_ARRAY;
 
 		return { *this };
@@ -139,23 +139,23 @@ namespace json {
 
 	Builder& Builder::EndDict() {
 		using namespace std::literals;
-		if (!nodes_stack_.empty() && nodes_stack_.back()->IsDict()) {
-			Dict tmp_dict = nodes_stack_.back()->AsDict();
+		if (!nodes_stack_.empty() && nodes_stack_.back().IsDict()) {
+			Dict tmp_dict = nodes_stack_.back().AsDict();
 			nodes_stack_.pop_back();
 			if (nodes_stack_.empty()) {
 				root_ = MakeNode(std::move(tmp_dict));
 			} else {
-				if (nodes_stack_.back()->IsArray()) {
-					Array tmp_arr = nodes_stack_.back()->AsArray();
+				if (nodes_stack_.back().IsArray()) {
+					Array tmp_arr = nodes_stack_.back().AsArray();
 					tmp_arr.emplace_back(std::move(tmp_dict));
 					nodes_stack_.pop_back();
-					nodes_stack_.emplace_back(new Node(std::move(tmp_arr)));
+					nodes_stack_.emplace_back(std::move(tmp_arr));
 				} else {
-					Dict tmp_dict_1 = nodes_stack_.back()->AsDict();
+					Dict tmp_dict_1 = nodes_stack_.back().AsDict();
 					tmp_dict_1[key_stack_.back()] = std::move(tmp_dict);
 					key_stack_.pop_back();
 					nodes_stack_.pop_back();
-					nodes_stack_.emplace_back(new Node(std::move(tmp_dict_1)));
+					nodes_stack_.emplace_back(std::move(tmp_dict_1));
 				}
 			}
 		} else {
@@ -168,23 +168,23 @@ namespace json {
 
 	Builder& Builder::EndArray() {
 		using namespace std::literals;
-		if (!nodes_stack_.empty() && nodes_stack_.back()->IsArray()) {
-			Array tmp_arr = nodes_stack_.back()->AsArray();
+		if (!nodes_stack_.empty() && nodes_stack_.back().IsArray()) {
+			Array tmp_arr = nodes_stack_.back().AsArray();
 			nodes_stack_.pop_back();
 			if (nodes_stack_.empty()) {
 				root_ = MakeNode(std::move(tmp_arr));
 			} else {
-				if (nodes_stack_.back()->IsArray()) {
-					Array tmp_arr_1 = nodes_stack_.back()->AsArray();
+				if (nodes_stack_.back().IsArray()) {
+					Array tmp_arr_1 = nodes_stack_.back().AsArray();
 					tmp_arr_1.emplace_back(std::move(tmp_arr));
 					nodes_stack_.pop_back();
-					nodes_stack_.emplace_back(new Node(std::move(tmp_arr_1)));
+					nodes_stack_.emplace_back(std::move(tmp_arr_1));
 				} else {
-					Dict tmp_dict = nodes_stack_.back()->AsDict();
+					Dict tmp_dict = nodes_stack_.back().AsDict();
 					tmp_dict[key_stack_.back()] = std::move(tmp_arr);
 					key_stack_.pop_back();
 					nodes_stack_.pop_back();
-					nodes_stack_.emplace_back(new Node(std::move(tmp_dict)));
+					nodes_stack_.emplace_back(std::move(tmp_dict));
 				}
 			}
 		} else {
@@ -198,7 +198,7 @@ namespace json {
 	Node Builder::Build() {
 		using namespace std::literals;
 		if (detail::InStack(last_method_, nodes_stack_)) {
-			return *nodes_stack_.back();
+			return nodes_stack_.back();
 		} else if (detail::InRoot(last_method_, nodes_stack_)) {
 			return root_;
 		} else {
@@ -251,7 +251,7 @@ namespace json {
 		: builder_(b)
 	{}
 
-	Key_ValueContext KeyValueCommand::Value(Node::Value v) {
+	KeyValueContext KeyValueCommand::Value(Node::Value v) {
 		builder_.Value(std::move(v));
 
 		return { builder_ };
@@ -283,15 +283,15 @@ namespace json {
 		return builder_.EndArray();
 	}
 
-	Key_EndDictCommands::Key_EndDictCommands(Builder& builder)
+	KeyEndDictCommands::KeyEndDictCommands(Builder& builder)
 		: builder_(builder)
 	{}
 
-	KeyItemContext Key_EndDictCommands::Key(std::string s) {
+	KeyItemContext KeyEndDictCommands::Key(std::string s) {
 		return builder_.Key(std::move(s));
 	}
 
-	Builder& Key_EndDictCommands::EndDict() {
+	Builder& KeyEndDictCommands::EndDict() {
 		return builder_.EndDict();
 	}
 
@@ -309,12 +309,12 @@ namespace json {
 		, KeyValueCommand(b)
 	{}
 
-	Key_ValueContext::Key_ValueContext(Builder& b)
-		: Key_EndDictCommands(b)
+	KeyValueContext::KeyValueContext(Builder& b)
+		: KeyEndDictCommands(b)
 	{}
 
 	DictItemContext::DictItemContext(Builder& b)
-		: Key_EndDictCommands(b)
+		: KeyEndDictCommands(b)
 	{}
 
 	ArrayValueItemContext::ArrayValueItemContext(Builder& b)

@@ -28,12 +28,12 @@ namespace json {
 
 	class StartArrayCommand;
 	class EndArrayCommand;
-	class Key_EndDictCommands;
+	class KeyEndDictCommands;
 	class StartDictCommand;
 	class KeyValueCommand;
 	class ArrayValueCommand;
 
-	class Key_ValueContext;
+	class KeyValueContext;
 	class ArrayValueItemContext;
 	class KeyItemContext;
 	class DictItemContext;
@@ -53,7 +53,7 @@ namespace json {
 
 	private:
 		Node root_;
-		std::vector<Node*> nodes_stack_;
+		std::vector<Node> nodes_stack_;
 		std::vector<std::string> key_stack_;
 		LastUsedMetod last_method_ = LastUsedMetod::NONE;
 
@@ -72,7 +72,7 @@ namespace json {
 	public:
 		KeyValueCommand(Builder& b);
 
-		Key_ValueContext Value(Node::Value v);
+		KeyValueContext Value(Node::Value v);
 
 	private:
 		Builder& builder_;
@@ -108,9 +108,9 @@ namespace json {
 		Builder& builder_;
 	};
 
-	class Key_EndDictCommands {
+	class KeyEndDictCommands {
 	public:
-		Key_EndDictCommands(Builder& builder);
+		KeyEndDictCommands(Builder& builder);
 
 		KeyItemContext Key(std::string s);
 		Builder& EndDict();
@@ -137,14 +137,14 @@ namespace json {
 		KeyItemContext(Builder& b);
 	};
 
-	class Key_ValueContext final 
-		: public Key_EndDictCommands {
+	class KeyValueContext final 
+		: public KeyEndDictCommands {
 	public:
-		Key_ValueContext(Builder& b);
+		KeyValueContext(Builder& b);
 	};
 
 	class DictItemContext final 
-		: public Key_EndDictCommands {
+		: public KeyEndDictCommands {
 	public:
 		DictItemContext(Builder& b);
 	};

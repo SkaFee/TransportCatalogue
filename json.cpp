@@ -177,7 +177,7 @@ namespace json {
 					try {
 						return std::stoi(parsed_num);
 					} catch (...) {
-
+						//do nothing here
 					}
 				}
 				return std::stod(parsed_num);
