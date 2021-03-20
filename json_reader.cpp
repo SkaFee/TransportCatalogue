@@ -1,4 +1,5 @@
 #include "json_reader.h"
+#include "transport_router.h"
 
 #include <utility>
 #include <unordered_set>
@@ -21,11 +22,16 @@ namespace json_reader {
 		const json::Node& node   = doc.GetRoot();
 		const json::Dict& dict   = node.AsDict();
 		
+		if (dict.count("routing_settings"s)) {
+			const auto [wait, vel] = ReadRoutingSettings(dict.at("routing_settings"s).AsDict());
+			rh_.SetRoutingSettings(wait, vel);
+		}
 		if (dict.count("base_requests"s)) {
 			FillTransportCatalogue(dict);
+			FillGraphInRouter();
 		}
 		if (dict.count("render_settings"s)) {
-			rh_.SetSettings(std::move(ReadRenderingSettings(dict)));
+			rh_.SetRenderSettings(std::move(ReadRenderingSettings(dict)));
 		}
 		if (dict.count("stat_requests"s)) {
 			AnswerStatRequests(dict, out);
@@ -39,7 +45,7 @@ namespace json_reader {
 		for (const auto& req_node : base_requests) {
 			const json::Dict& req = req_node.AsDict();
 			if (req.at("type"s).AsString() == "Stop"s) {
-				stops_road_distances.emplace_back(std::pair<const std::string&, const json::Dict&>{ req.at("name"s).AsString(), FillStop(req) });
+				stops_road_distances.emplace_back(req.at("name"s).AsString(), FillStop(req));
 			} 
 		}
 
@@ -57,6 +63,40 @@ namespace json_reader {
 		}
 	}
 
+	void JsonReader::FillGraphInRouter() {
+		for (const StopPtr stop : rh_.GetStopsInVector()) {
+			std::string_view stop_name(*stop.get()->name.get());
+			rh_.AddStopToRouter(stop_name);
+			rh_.AddWaitEdgeToRouter(stop_name);
+		}
+
+		for (const BusPtr bus : rh_.GetBusesInVector()) {
+			const std::string_view bus_name = *bus->name;
+			for (size_t i = 0; i < bus->route.size() - 1; ++i) {
+				const std::string_view stop_name_from = *bus->route[i]->name;
+
+				int prev_actual = 0;
+				std::string_view prev_stop_name = stop_name_from;
+
+				for (size_t j = i + 1; j < bus->route.size(); ++j) {
+					const std::string_view stop_name_to = *bus->route[j]->name;
+					int actual = *rh_.GetActualDistanceBetweenStops(prev_stop_name, stop_name_to);
+					rh_.AddBusEdgeToRouter(
+						stop_name_from,
+						stop_name_to,
+						bus_name,
+						j - i,
+						prev_actual + actual
+					);
+					prev_stop_name = stop_name_to;
+					prev_actual += actual;
+				}
+			}
+		}
+
+		rh_.BuildRouter();
+	}
+
 	const json::Dict& JsonReader::FillStop(const json::Dict& stop_req) {
 		const auto& node_latitude = stop_req.at("latitude"s);
 		double latitude = node_latitude.IsPureDouble() ? node_latitude.AsDouble() : node_latitude.AsInt();
@@ -64,11 +104,12 @@ namespace json_reader {
 		double longitude = node_longitude.IsPureDouble() ? node_longitude.AsDouble() : node_longitude.AsInt();
 		Stop stop(std::move(std::string(stop_req.at("name"s).AsString())), latitude, longitude);
 		rh_.AddStop(std::move(stop));
+
 		return stop_req.at("road_distances"s).AsDict();
 	}
 
 	void JsonReader::FillBus(const json::Dict& bus_req) {
-		auto [route, unique_stops_num, last_stop ] = WordsToRoute(bus_req.at("stops"s).AsArray(), bus_req.at("is_roundtrip"s).AsBool());
+		auto [route, unique_stops_num, last_stop] = WordsToRoute(bus_req.at("stops"s).AsArray(), bus_req.at("is_roundtrip"s).AsBool());
 		const auto [geographic, actual] = rh_.ComputeRouteLengths(route);
 		if (last_stop.get() == rh_.SearchStop(route.front()).get()) {
 			Bus bus(std::move(std::string(bus_req.at("name"s).AsString())), rh_.StopsToStopPtr(std::move(route)), unique_stops_num, actual, geographic);
@@ -77,6 +118,13 @@ namespace json_reader {
 			Bus bus(std::move(std::string(bus_req.at("name"s).AsString())), rh_.StopsToStopPtr(std::move(route)), unique_stops_num, actual, geographic, last_stop);
 			rh_.AddBus(std::move(bus));
 		}
+	}
+
+	std::tuple<json_reader::JsonReader::BusWaitTime, json_reader::JsonReader::BusVelocity> JsonReader::ReadRoutingSettings(const json::Dict& dict) {
+		const int wait_time   = dict.at("bus_wait_time"s).AsInt();
+		const double velocity = GetDoubleFromNode(dict.at("bus_velocity"s));
+
+		return { wait_time, velocity };
 	}
 
 	renderer::RenderingSettings JsonReader::ReadRenderingSettings(const json::Dict& dict) {
@@ -173,9 +221,21 @@ namespace json_reader {
 			const std::string& type = req.at("type"s).AsString();
 			json::Node node;
 			if (type == "Stop"s) {
-				node = OutStopStat(rh_.GetStopStat(req.at("name"s).AsString()), req.at("id"s).AsInt());
+				node = OutStopStat(
+					rh_.GetStopStat(req.at("name"s).AsString()), 
+					req.at("id"s).AsInt()
+				);
 			} else if (type == "Bus"s) {
-				node = OutBusStat(rh_.GetBusStat(req.at("name"s).AsString()), req.at("id"s).AsInt());
+				node = OutBusStat(
+					rh_.GetBusStat(req.at("name"s).AsString()), 
+					req.at("id"s).AsInt()
+				);
+			} else if (type == "Route"s) {
+				node = OutRouteReq(
+					req.at("from"s).AsString(),
+					req.at("to"s).AsString(),
+					req.at("id"s).AsInt()
+				);
 			} else {
 				node = OutMapReq(req.at("id"s).AsInt());
 			}
@@ -190,9 +250,10 @@ namespace json_reader {
 			json::Array arr;
 			if (stop_stat->passing_buses == nullptr) {
 				json::Dict dict = {
-					{ "buses"s, json::Node(std::move(arr)) },
-					{ "request_id"s, json::Node(id) }
+					{ "buses"s,      json::Node(std::move(arr)) },
+					{ "request_id"s, json::Node(id)             }
 				};
+
 				return json::Node(std::move(dict));
 			}
 			const auto buses = *stop_stat->passing_buses;
@@ -200,24 +261,28 @@ namespace json_reader {
 			std::vector<BusPtr> tmp(buses.begin(), buses.end());
 			std::sort(tmp.begin(), tmp.end(), 
 				[](const BusPtr& lhs, const BusPtr& rhs) {
-					return std::lexicographical_compare(
-						lhs.get()->name.get()->begin(), lhs.get()->name.get()->end(),
-						rhs.get()->name.get()->begin(), rhs.get()->name.get()->end());
+					return 
+						std::lexicographical_compare(
+							lhs.get()->name.get()->begin(), lhs.get()->name.get()->end(),
+							rhs.get()->name.get()->begin(), rhs.get()->name.get()->end()
+						);
 				}
 			);
 			for (const BusPtr& bus : std::move(tmp)) {
 				arr.push_back(json::Node(*bus.get()->name.get()));
 			}
 			json::Dict dict = {
-				{ "buses"s, json::Node(std::move(arr)) },
-				{ "request_id"s, json::Node(id) }
+				{ "buses"s,      json::Node(std::move(arr)) },
+				{ "request_id"s, json::Node(id)             }
 			};
+
 			return json::Node(std::move(dict));
 		} else {
 			json::Dict dict = {
-				{ "request_id"s, json::Node(id) },
+				{ "request_id"s,    json::Node(id)                      },
 				{ "error_message"s, json::Node(std::move("not found"s)) }
 			};
+
 			return json::Node(std::move(dict));
 		}
 	}
@@ -225,18 +290,63 @@ namespace json_reader {
 	json::Node JsonReader::OutBusStat(const std::optional<BusStat> bus_stat, int id) const {
 		if (bus_stat.has_value()) {
 			json::Dict dict = {
-				{ "request_id"s, json::Node(id) },
-				{ "curvature"s, json::Node(bus_stat->curvature) },
-				{ "unique_stop_count"s, json::Node(bus_stat->unique_stops) },
-				{ "stop_count"s, json::Node(bus_stat->stops_on_route) },
-				{ "route_length"s, json::Node(bus_stat->routh_actual_length) }
+				{ "request_id"s,        json::Node(id)                            },
+				{ "curvature"s,         json::Node(bus_stat->curvature)           },
+				{ "unique_stop_count"s, json::Node(bus_stat->unique_stops)        },
+				{ "stop_count"s,        json::Node(bus_stat->stops_on_route)      },
+				{ "route_length"s,      json::Node(bus_stat->routh_actual_length) }
 			};
+
 			return json::Node(std::move(dict));
 		} else {
 			json::Dict dict = {
-				{ "request_id"s, json::Node(id) },
+				{ "request_id"s,    json::Node(id)                      },
 				{ "error_message"s, json::Node(std::move("not found"s)) }
 			};
+
+			return json::Node(std::move(dict));
+		}
+	}
+
+	json::Node JsonReader::OutRouteReq(const std::string_view from, const std::string_view to, int id) const {
+		const auto route_info = rh_.GetRouteInfo(from, to);
+		if (route_info) {
+			json::Array arr;
+			arr.reserve(route_info->items.size());
+			for (const auto item : route_info->items) {
+				if (item.wait_item) {
+					std::string stop_name(item.wait_item->stop_name);
+					json::Dict dict = {
+						{ "type"s,      json::Node(std::move("Wait"s))   },
+						{ "stop_name"s, json::Node(std::move(stop_name)) },
+						{ "time"s,      json::Node(item.wait_item->time) }
+					};
+					arr.push_back(std::move(dict));
+				} else {
+					std::string bus_name(item.bus_item->bus_name);
+					json::Dict dict = {
+						{ "type"s,       json::Node(std::move("Bus"s))         },
+						{ "bus"s,        json::Node(std::move(bus_name))       },
+						{ "span_count"s, json::Node(item.bus_item->span_count) },
+						{ "time"s,       json::Node(item.bus_item->time)       }
+					};
+					arr.push_back(std::move(dict));
+				}
+			}
+
+			json::Dict dict = {
+				{ "request_id"s, json::Node(id)                     },
+				{ "total_time"s, json::Node(route_info->total_time) },
+				{ "items"s,      json::Node(std::move(arr))         }
+			};
+
+			return json::Node(std::move(dict));
+		} else {
+			json::Dict dict = {
+				{ "request_id"s,    json::Node(id)                      },
+				{ "error_message"s, json::Node(std::move("not found"s)) }
+			};
+
 			return json::Node(std::move(dict));
 		}
 	}

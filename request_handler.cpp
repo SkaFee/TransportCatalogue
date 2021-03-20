@@ -141,6 +141,10 @@ namespace request_handler {
 		return result;
 	}
 
+	std::optional<int> RequestHandler::GetActualDistanceBetweenStops(const std::string_view stop1_name, const std::string_view stop2_name) const {
+		return db_.GetActualDistanceBetweenStops(stop1_name, stop2_name);
+	}
+
 	svg::Document RequestHandler::RenderMap() const {
 		std::vector<BusPtr> buses = db_.GetBusesInVector();
 
@@ -152,8 +156,33 @@ namespace request_handler {
 		return mr_.MakeDocument(std::move(buses), std::move(stops));
 	}
 
-	void RequestHandler::SetSettings(renderer::RenderingSettings&& settings) {
+	void RequestHandler::SetRenderSettings(renderer::RenderingSettings&& settings) {
 		mr_.SetSettings(std::move(settings));
+	}
+
+	void RequestHandler::SetRoutingSettings(const double bus_wait_time, const double bus_velocity) {
+		rt_.SetSettings(bus_wait_time, bus_velocity);
+	}
+
+	void RequestHandler::AddStopToRouter(const std::string_view name) {
+		rt_.AddStop(name);
+	}
+
+	void RequestHandler::AddWaitEdgeToRouter(const std::string_view stop_name) {
+		rt_.AddWaitEdge(stop_name);
+	}
+
+	void RequestHandler::AddBusEdgeToRouter(const std::string_view stop_from, const std::string_view stop_to, const std::string_view bus_name, const int span_count, const int dist) {
+		rt_.AddBusEdge(stop_from, stop_to, bus_name, span_count, dist);
+	}
+
+	void RequestHandler::BuildRouter() {
+		rt_.BuildGraph();
+		rt_.BuildRouter();
+	}
+
+	std::optional<transport::RouteInfo> RequestHandler::GetRouteInfo(const std::string_view from, const std::string_view to) const {
+		return rt_.GetRouteInfo(from, to);
 	}
 
 	std::tuple<std::string, size_t> RequestHandler::QueryGetName(const std::string_view str) const {

@@ -4,6 +4,7 @@
 #include "request_handler.h"
 
 #include <iostream>
+#include <fstream>
 
 using namespace std::literals;
 
