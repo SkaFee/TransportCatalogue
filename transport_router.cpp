@@ -79,7 +79,7 @@ namespace transport {
 		}
 	}
 
-	std::vector<RouteItem> Router::MakeItemsByEdgeIds(const std::vector<graph::EdgeId> edge_ids) const {
+	std::vector<RouteItem> Router::MakeItemsByEdgeIds(const std::vector<graph::EdgeId>& edge_ids) const {
 		std::vector<RouteItem> result;
 		result.reserve(edge_ids.size());
 

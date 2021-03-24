@@ -83,6 +83,6 @@ namespace transport {
 		std::vector<EdgeInfo> edges_;
 
 		void AddEdgesToGraph();
-		std::vector<RouteItem> MakeItemsByEdgeIds(const std::vector<graph::EdgeId> edge_ids) const;
+		std::vector<RouteItem> MakeItemsByEdgeIds(const std::vector<graph::EdgeId>& edge_ids) const;
 	};
 }
